@@ -20,6 +20,19 @@ if (!result.allowed) {
 }
 ```
 
+## Acceptance Criteria
+
+The gate returns `allowed: true` only when **all four** conditions are met:
+
+| Condition | Input field | Fail reason | Rule |
+|-----------|------------|-------------|------|
+| Tests pass | `testsPassed` | `tests failed` | CI test suite exits 0 |
+| Lint passes | `lintPassed` | `lint failed` | Linter exits 0, no errors |
+| Coverage meets threshold | `coverageOk` | `coverage below threshold` | Coverage ≥ configured minimum |
+| No merge conflicts | `noConflicts` | `merge conflicts` | `git merge-tree` reports no conflicts |
+
+If any condition fails, `allowed` is `false` and `reasons` contains the corresponding message(s).
+
 ## Scripts
 
 | Script | Description |

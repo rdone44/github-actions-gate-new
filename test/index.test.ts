@@ -24,4 +24,37 @@ describe("gateCheck", () => {
     assert.equal(result.allowed, false);
     assert.ok(result.reasons.includes("tests failed"));
   });
+
+  it("blocks merge when lint fails", () => {
+    const result = gateCheck({
+      testsPassed: true,
+      lintPassed: false,
+      coverageOk: true,
+      noConflicts: true,
+    });
+    assert.equal(result.allowed, false);
+    assert.ok(result.reasons.includes("lint failed"));
+  });
+
+  it("blocks merge when coverage below threshold", () => {
+    const result = gateCheck({
+      testsPassed: true,
+      lintPassed: true,
+      coverageOk: false,
+      noConflicts: true,
+    });
+    assert.equal(result.allowed, false);
+    assert.ok(result.reasons.includes("coverage below threshold"));
+  });
+
+  it("blocks merge when merge conflicts exist", () => {
+    const result = gateCheck({
+      testsPassed: true,
+      lintPassed: true,
+      coverageOk: true,
+      noConflicts: false,
+    });
+    assert.equal(result.allowed, false);
+    assert.ok(result.reasons.includes("merge conflicts"));
+  });
 });
