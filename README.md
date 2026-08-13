@@ -44,3 +44,5 @@ If any condition fails, `allowed` is `false` and `reasons` contains the correspo
 ## License
 
 MIT
+
+<!-- trigger-gate: verify CI pipeline -->
