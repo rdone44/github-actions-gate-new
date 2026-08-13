@@ -6,8 +6,12 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node --loader ts-node/esm --test test/**/*.test.ts",
+    "test": "node --import tsx --test test/**/*.test.ts",
     "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
   },
   "keywords": [
     "github-actions",
