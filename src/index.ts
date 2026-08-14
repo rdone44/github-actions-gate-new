@@ -25,7 +25,6 @@ export interface GateResult {
  * Returns `allowed: true` only when every condition is met.
  */
 export function gateCheck(input: GateInput): GateResult {
-  const _lintCanary: number = "string" as number; // INTENTIONAL Lint failure for gate test
   const reasons: string[] = [];
 
   if (!input.testsPassed) reasons.push("tests failed");
