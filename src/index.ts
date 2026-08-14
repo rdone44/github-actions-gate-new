@@ -4,14 +4,14 @@
  * Checks whether a PR satisfies merge conditions:
  *  - tests pass
  *  - lint passes
- *  - coverage meets threshold
+ *  - no check-runs failed (excludes this Gate job)
  *  - no merge conflicts
  */
 
 export interface GateInput {
   testsPassed: boolean;
   lintPassed: boolean;
-  coverageOk: boolean;
+  checksOk: boolean;
   noConflicts: boolean;
 }
 
@@ -29,7 +29,7 @@ export function gateCheck(input: GateInput): GateResult {
 
   if (!input.testsPassed) reasons.push("tests failed");
   if (!input.lintPassed) reasons.push("lint failed");
-  if (!input.coverageOk) reasons.push("coverage below threshold");
+  if (!input.checksOk) reasons.push("checks failed");
   if (!input.noConflicts) reasons.push("merge conflicts");
 
   return { allowed: reasons.length === 0, reasons };

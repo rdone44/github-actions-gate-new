@@ -59,30 +59,28 @@ jobs:
           MERGEABLE: ${{ steps.mergeable.outputs.mergeable }}
           CHECK_FAILURES: ${{ steps.checks.outputs.failures }}
         run: |
-          COVERAGE_OK="true"
+          CHECKS_OK="false"
           NO_CONFLICTS="false"
           if [ "$MERGEABLE" = "true" ]; then
             NO_CONFLICTS="true"
           fi
           if [ "$CHECK_FAILURES" = "0" ]; then
-            COVERAGE_OK="true"
-          else
-            COVERAGE_OK="false"
+            CHECKS_OK="true"
           fi
-          echo "coverageOk=$COVERAGE_OK" >> "$GITHUB_OUTPUT"
+          echo "checksOk=$CHECKS_OK" >> "$GITHUB_OUTPUT"
           echo "noConflicts=$NO_CONFLICTS" >> "$GITHUB_OUTPUT"
 
       - name: Gate decision
         env:
           TESTS_OK: ${{ steps.test.outcome }}
           LINT_OK: ${{ steps.lint.outcome }}
-          COVERAGE_OK: ${{ steps.gate.outputs.coverageOk }}
+          CHECKS_OK: ${{ steps.gate.outputs.checksOk }}
           NO_CONFLICTS: ${{ steps.gate.outputs.noConflicts }}
         run: |
           REASONS=""
           [ "$LINT_OK" != "success" ] && REASONS="${REASONS} lint failed;"
           [ "$TESTS_OK" != "success" ] && REASONS="${REASONS} tests failed;"
-          [ "$COVERAGE_OK" = "false" ] && REASONS="${REASONS} coverage/check-runs failed;"
+          [ "$CHECKS_OK" = "false" ] && REASONS="${REASONS} checks failed;"
           [ "$NO_CONFLICTS" = "false" ] && REASONS="${REASONS} merge conflicts;"
           if [ -n "$REASONS" ]; then
             echo "::error::Gate blocked:$REASONS"

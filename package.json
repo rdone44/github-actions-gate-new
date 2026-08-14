@@ -1,7 +1,7 @@
 {
   "name": "github-actions-gate",
   "version": "1.0.0",
-  "description": "CI/CD readiness gate for GitHub Actions — block merges until PRs pass tests, lint, coverage, and conflict checks.",
+  "description": "CI/CD readiness gate for GitHub Actions — block merges until PRs pass tests, lint, checks, and conflict checks.",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

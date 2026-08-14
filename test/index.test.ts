@@ -7,7 +7,7 @@ describe("gateCheck", () => {
     const result = gateCheck({
       testsPassed: true,
       lintPassed: true,
-      coverageOk: true,
+      checksOk: true,
       noConflicts: true,
     });
     assert.equal(result.allowed, true);
@@ -18,7 +18,7 @@ describe("gateCheck", () => {
     const result = gateCheck({
       testsPassed: false,
       lintPassed: true,
-      coverageOk: true,
+      checksOk: true,
       noConflicts: true,
     });
     assert.equal(result.allowed, false);
@@ -29,29 +29,29 @@ describe("gateCheck", () => {
     const result = gateCheck({
       testsPassed: true,
       lintPassed: false,
-      coverageOk: true,
+      checksOk: true,
       noConflicts: true,
     });
     assert.equal(result.allowed, false);
     assert.ok(result.reasons.includes("lint failed"));
   });
 
-  it("blocks merge when coverage below threshold", () => {
+  it("blocks merge when checks fail", () => {
     const result = gateCheck({
       testsPassed: true,
       lintPassed: true,
-      coverageOk: false,
+      checksOk: false,
       noConflicts: true,
     });
     assert.equal(result.allowed, false);
-    assert.ok(result.reasons.includes("coverage below threshold"));
+    assert.ok(result.reasons.includes("checks failed"));
   });
 
   it("blocks merge when merge conflicts exist", () => {
     const result = gateCheck({
       testsPassed: true,
       lintPassed: true,
-      coverageOk: true,
+      checksOk: true,
       noConflicts: false,
     });
     assert.equal(result.allowed, false);
@@ -62,7 +62,7 @@ describe("gateCheck", () => {
     const result = gateCheck({
       testsPassed: false,
       lintPassed: false,
-      coverageOk: false,
+      checksOk: false,
       noConflicts: false,
     });
     assert.equal(result.allowed, false);
@@ -70,7 +70,7 @@ describe("gateCheck", () => {
     assert.deepEqual(result.reasons, [
       "tests failed",
       "lint failed",
-      "coverage below threshold",
+      "checks failed",
       "merge conflicts",
     ]);
   });
