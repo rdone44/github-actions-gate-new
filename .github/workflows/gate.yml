@@ -13,5 +13,72 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm run lint
-      - run: npm test
+
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: npm test
+
+      # --- Pull PR metadata via gh api ---
+      - name: Fetch PR mergeable_state
+        id: mergeable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM="${{ github.event.pull_request.number }}"
+          STATE=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/pulls/$PR_NUM --jq '.mergeable_state')
+          echo "state=$STATE" >> "$GITHUB_OUTPUT"
+          echo "mergeable_state: $STATE"
+
+      - name: Fetch check-runs conclusion
+        id: checks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${{ github.event.pull_request.head.sha }}"
+          CONCLUSION=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/commits/$SHA/check-runs --jq '[.check_runs[] | select(.conclusion == "failure")] | length')
+          echo "failures=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "failed check-runs: $CONCLUSION"
+
+      # --- Evaluate gate ---
+      - name: Evaluate gate
+        id: gate
+        env:
+          MERGEABLE_STATE: ${{ steps.mergeable.outputs.state }}
+          CHECK_FAILURES: ${{ steps.checks.outputs.failures }}
+        run: |
+          COVERAGE_OK="true"
+          NO_CONFLICTS="false"
+          if [ "$MERGEABLE_STATE" = "clean" ] || [ "$MERGEABLE_STATE" = "unstable" ]; then
+            NO_CONFLICTS="true"
+          fi
+          if [ "$CHECK_FAILURES" = "0" ]; then
+            COVERAGE_OK="true"
+          else
+            COVERAGE_OK="false"
+          fi
+          echo "coverageOk=$COVERAGE_OK" >> "$GITHUB_OUTPUT"
+          echo "noConflicts=$NO_CONFLICTS" >> "$GITHUB_OUTPUT"
+
+      - name: Gate decision
+        env:
+          TESTS_OK: ${{ steps.test.outcome }}
+          LINT_OK: ${{ steps.lint.outcome }}
+          COVERAGE_OK: ${{ steps.gate.outputs.coverageOk }}
+          NO_CONFLICTS: ${{ steps.gate.outputs.noConflicts }}
+        run: |
+          REASONS=""
+          [ "$LINT_OK" != "success" ] && REASONS="${REASONS} lint failed;"
+          [ "$TESTS_OK" != "success" ] && REASONS="${REASONS} tests failed;"
+          [ "$COVERAGE_OK" = "false" ] && REASONS="${REASONS} coverage/check-runs failed;"
+          [ "$NO_CONFLICTS" = "false" ] && REASONS="${REASONS} merge conflicts;"
+          if [ -n "$REASONS" ]; then
+            echo "::error::Gate blocked:$REASONS"
+            exit 1
+          fi
+          echo "Gate passed — all conditions met"
