@@ -25,15 +25,20 @@ jobs:
         run: npm test
 
       # --- Pull PR metadata via gh api ---
-      - name: Fetch PR mergeable_state
+      # Use the boolean `mergeable` field, NOT `mergeable_state`.
+      # `mergeable_state` includes "blocked" when a required status check
+      # (this very Gate) has failed — that is NOT a merge conflict and causes
+      # a self-referential deadlock.  `mergeable` is true iff the branch can
+      # be merged without text conflicts.
+      - name: Fetch PR mergeable
         id: mergeable
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR_NUM="${{ github.event.pull_request.number }}"
-          STATE=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/pulls/$PR_NUM --jq '.mergeable_state')
-          echo "state=$STATE" >> "$GITHUB_OUTPUT"
-          echo "mergeable_state: $STATE"
+          MERGEABLE=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/pulls/$PR_NUM --jq '.mergeable')
+          echo "mergeable=$MERGEABLE" >> "$GITHUB_OUTPUT"
+          echo "mergeable: $MERGEABLE"
 
       - name: Fetch check-runs conclusion
         id: checks
@@ -41,20 +46,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SHA="${{ github.event.pull_request.head.sha }}"
-          CONCLUSION=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/commits/$SHA/check-runs --jq '[.check_runs[] | select(.conclusion == "failure")] | length')
+          # Exclude the Gate job itself to avoid self-referential failures.
+          CONCLUSION=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/commits/$SHA/check-runs \
+            --jq '[.check_runs[] | select(.conclusion == "failure") | select(.name != "gate")] | length')
           echo "failures=$CONCLUSION" >> "$GITHUB_OUTPUT"
-          echo "failed check-runs: $CONCLUSION"
+          echo "failed check-runs (excl. gate): $CONCLUSION"
 
       # --- Evaluate gate ---
       - name: Evaluate gate
         id: gate
         env:
-          MERGEABLE_STATE: ${{ steps.mergeable.outputs.state }}
+          MERGEABLE: ${{ steps.mergeable.outputs.mergeable }}
           CHECK_FAILURES: ${{ steps.checks.outputs.failures }}
         run: |
           COVERAGE_OK="true"
           NO_CONFLICTS="false"
-          if [ "$MERGEABLE_STATE" = "clean" ] || [ "$MERGEABLE_STATE" = "unstable" ]; then
+          if [ "$MERGEABLE" = "true" ]; then
             NO_CONFLICTS="true"
           fi
           if [ "$CHECK_FAILURES" = "0" ]; then
