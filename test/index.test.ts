@@ -57,4 +57,21 @@ describe("gateCheck", () => {
     assert.equal(result.allowed, false);
     assert.ok(result.reasons.includes("merge conflicts"));
   });
+
+  it("blocks merge and aggregates all reasons in order when every condition fails", () => {
+    const result = gateCheck({
+      testsPassed: false,
+      lintPassed: false,
+      coverageOk: false,
+      noConflicts: false,
+    });
+    assert.equal(result.allowed, false);
+    assert.equal(result.reasons.length, 4);
+    assert.deepEqual(result.reasons, [
+      "tests failed",
+      "lint failed",
+      "coverage below threshold",
+      "merge conflicts",
+    ]);
+  });
 });
