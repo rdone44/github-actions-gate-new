@@ -13,5 +13,79 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm run lint
-      - run: npm test
+
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: npm test
+
+      # --- Pull PR metadata via gh api ---
+      # Use the boolean `mergeable` field, NOT `mergeable_state`.
+      # `mergeable_state` includes "blocked" when a required status check
+      # (this very Gate) has failed — that is NOT a merge conflict and causes
+      # a self-referential deadlock.  `mergeable` is true iff the branch can
+      # be merged without text conflicts.
+      - name: Fetch PR mergeable
+        id: mergeable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM="${{ github.event.pull_request.number }}"
+          MERGEABLE=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/pulls/$PR_NUM --jq '.mergeable')
+          echo "mergeable=$MERGEABLE" >> "$GITHUB_OUTPUT"
+          echo "mergeable: $MERGEABLE"
+
+      - name: Fetch check-runs conclusion
+        id: checks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${{ github.event.pull_request.head.sha }}"
+          # Exclude the Gate job itself to avoid self-referential failures.
+          CONCLUSION=$(gh api repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/commits/$SHA/check-runs \
+            --jq '[.check_runs[] | select(.conclusion == "failure") | select(.name != "gate")] | length')
+          echo "failures=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "failed check-runs (excl. gate): $CONCLUSION"
+
+      # --- Evaluate gate ---
+      - name: Evaluate gate
+        id: gate
+        env:
+          MERGEABLE: ${{ steps.mergeable.outputs.mergeable }}
+          CHECK_FAILURES: ${{ steps.checks.outputs.failures }}
+        run: |
+          COVERAGE_OK="true"
+          NO_CONFLICTS="false"
+          if [ "$MERGEABLE" = "true" ]; then
+            NO_CONFLICTS="true"
+          fi
+          if [ "$CHECK_FAILURES" = "0" ]; then
+            COVERAGE_OK="true"
+          else
+            COVERAGE_OK="false"
+          fi
+          echo "coverageOk=$COVERAGE_OK" >> "$GITHUB_OUTPUT"
+          echo "noConflicts=$NO_CONFLICTS" >> "$GITHUB_OUTPUT"
+
+      - name: Gate decision
+        env:
+          TESTS_OK: ${{ steps.test.outcome }}
+          LINT_OK: ${{ steps.lint.outcome }}
+          COVERAGE_OK: ${{ steps.gate.outputs.coverageOk }}
+          NO_CONFLICTS: ${{ steps.gate.outputs.noConflicts }}
+        run: |
+          REASONS=""
+          [ "$LINT_OK" != "success" ] && REASONS="${REASONS} lint failed;"
+          [ "$TESTS_OK" != "success" ] && REASONS="${REASONS} tests failed;"
+          [ "$COVERAGE_OK" = "false" ] && REASONS="${REASONS} coverage/check-runs failed;"
+          [ "$NO_CONFLICTS" = "false" ] && REASONS="${REASONS} merge conflicts;"
+          if [ -n "$REASONS" ]; then
+            echo "::error::Gate blocked:$REASONS"
+            exit 1
+          fi
+          echo "Gate passed — all conditions met"
