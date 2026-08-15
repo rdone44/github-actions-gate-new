@@ -10,8 +10,8 @@ describe("gateCheck", () => {
       checksOk: true,
       noConflicts: true,
     });
-    assert.equal(result.allowed, true);
-    assert.equal(result.reasons.length, 0);
+    assert.strictEqual(result.allowed, true);
+    assert.strictEqual(result.reasons.length, 0);
   });
 
   it("blocks merge when tests fail", () => {
@@ -21,7 +21,7 @@ describe("gateCheck", () => {
       checksOk: true,
       noConflicts: true,
     });
-    assert.equal(result.allowed, false);
+    assert.strictEqual(result.allowed, false);
     assert.ok(result.reasons.includes("tests failed"));
   });
 
@@ -32,7 +32,7 @@ describe("gateCheck", () => {
       checksOk: true,
       noConflicts: true,
     });
-    assert.equal(result.allowed, false);
+    assert.strictEqual(result.allowed, false);
     assert.ok(result.reasons.includes("lint failed"));
   });
 
@@ -43,7 +43,7 @@ describe("gateCheck", () => {
       checksOk: false,
       noConflicts: true,
     });
-    assert.equal(result.allowed, false);
+    assert.strictEqual(result.allowed, false);
     assert.ok(result.reasons.includes("checks failed"));
   });
 
@@ -54,7 +54,7 @@ describe("gateCheck", () => {
       checksOk: true,
       noConflicts: false,
     });
-    assert.equal(result.allowed, false);
+    assert.strictEqual(result.allowed, false);
     assert.ok(result.reasons.includes("merge conflicts"));
   });
 
@@ -65,9 +65,9 @@ describe("gateCheck", () => {
       checksOk: false,
       noConflicts: false,
     });
-    assert.equal(result.allowed, false);
-    assert.equal(result.reasons.length, 4);
-    assert.deepEqual(result.reasons, [
+    assert.strictEqual(result.allowed, false);
+    assert.strictEqual(result.reasons.length, 4);
+    assert.deepStrictEqual(result.reasons, [
       "tests failed",
       "lint failed",
       "checks failed",

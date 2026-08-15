@@ -7,70 +7,52 @@ import {
 
 describe("isGateTrigger", () => {
   it("matches exact /gate comment", () => {
-    assert.equal(isGateTrigger("/gate"), true);
+    assert.strictEqual(isGateTrigger("/gate"), true);
   });
 
   it("matches /gate with trailing whitespace", () => {
-    assert.equal(isGateTrigger("/gate\n"), true);
-    assert.equal(isGateTrigger("/gate  "), true);
+    assert.strictEqual(isGateTrigger("/gate\n"), true);
+    assert.strictEqual(isGateTrigger("/gate  "), true);
   });
 
   it("does not match /gate embedded in other text", () => {
-    assert.equal(isGateTrigger("please /gate now"), false);
-    assert.equal(isGateTrigger("/gate review"), false);
+    assert.strictEqual(isGateTrigger("please /gate now"), false);
+    assert.strictEqual(isGateTrigger("/gate review"), false);
   });
 
   it("does not match case-insensitive variants", () => {
-    assert.equal(isGateTrigger("/Gate"), false);
-    assert.equal(isGateTrigger("/GATE"), false);
+    assert.strictEqual(isGateTrigger("/Gate"), false);
+    assert.strictEqual(isGateTrigger("/GATE"), false);
   });
 
   it("does not match edited comments", () => {
-    assert.equal(
-      isGateTrigger("/gate", { action: "edited" }),
-      false,
-    );
+    assert.strictEqual(isGateTrigger("/gate", { action: "edited" }), false);
   });
 
   it("ignores similar but non-matching triggers", () => {
-    assert.equal(isGateTrigger("/gate-check"), false);
-    assert.equal(isGateTrigger("/gated"), false);
+    assert.strictEqual(isGateTrigger("/gate-check"), false);
+    assert.strictEqual(isGateTrigger("/gated"), false);
   });
 });
 
 describe("hasTriggerPermission", () => {
   it("allows admin role", () => {
-    assert.equal(
-      hasTriggerPermission({ permission: "admin" }),
-      true,
-    );
+    assert.strictEqual(hasTriggerPermission({ permission: "admin" }), true);
   });
 
   it("allows maintain role (owner-equivalent)", () => {
-    assert.equal(
-      hasTriggerPermission({ permission: "maintain" }),
-      true,
-    );
+    assert.strictEqual(hasTriggerPermission({ permission: "maintain" }), true);
   });
 
   it("denies write role", () => {
-    assert.equal(
-      hasTriggerPermission({ permission: "write" }),
-      false,
-    );
+    assert.strictEqual(hasTriggerPermission({ permission: "write" }), false);
   });
 
   it("denies read role", () => {
-    assert.equal(
-      hasTriggerPermission({ permission: "read" }),
-      false,
-    );
+    assert.strictEqual(hasTriggerPermission({ permission: "read" }), false);
   });
 
   it("denies none role", () => {
-    assert.equal(
-      hasTriggerPermission({ permission: "none" }),
-      false,
-    );
+    assert.strictEqual(hasTriggerPermission({ permission: "none" }), false);
   });
 });
