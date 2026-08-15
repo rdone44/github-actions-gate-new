@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/index.test.ts",
+    "test": "node --import tsx --test test/*.test.ts",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
