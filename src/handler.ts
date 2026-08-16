@@ -43,16 +43,16 @@ export function handleWebhook(
   payload: WebhookPayload,
   context: GateContext,
 ): HandlerResponse {
-  // Path 1 — not a /gate trigger
-  if (!isGateTrigger(payload.comment.body, { action: payload.action })) {
+  // Path 1 — not a /gate trigger (null-safe: comment body may be absent)
+  if (payload.comment?.body === undefined || !isGateTrigger(payload.comment.body, { action: payload.action })) {
     return {
       status: "ignored",
       message: "comment does not trigger /gate",
     };
   }
 
-  // Path 2 — trigger matched, but permission insufficient
-  if (!hasTriggerPermission({ permission: payload.commenter.permission })) {
+  // Path 2 — trigger matched, but permission insufficient (null-safe)
+  if (!payload.commenter?.permission || !hasTriggerPermission({ permission: payload.commenter.permission })) {
     return {
       status: "denied",
       message: `commenter permission '${payload.commenter.permission}' is not allowed to trigger /gate`,
