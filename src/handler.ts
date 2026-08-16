@@ -9,6 +9,7 @@ import {
   hasTriggerPermission,
 } from "./comment-trigger.ts";
 import { gateCheck, type GateInput, type GateResult } from "./index.ts";
+export type { GateInput };
 
 export interface WebhookPayload {
   action: string;
