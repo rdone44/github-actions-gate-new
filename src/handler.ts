@@ -19,6 +19,15 @@ export interface WebhookPayload {
   commenter: {
     permission: string; // "admin" | "maintain" | "write" | "read" | "none"
   };
+  issue?: {
+    number: number;
+    pull_request?: { url?: string };
+  };
+  repository?: {
+    name: string;
+    full_name?: string;
+    owner?: { login: string };
+  };
 }
 
 export interface GateContext {
