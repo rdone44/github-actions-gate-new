@@ -16,7 +16,17 @@ Status codes: `200` ignored/passed, `403` denied, `422` blocked, `400` bad JSON.
 
 ## Quick Start
 
-### Docker
+### Docker Compose (已验证)
+
+```bash
+cp .env.example .env   # 按需修改环境变量
+docker compose up -d  # 构建并后台启动
+curl localhost:3000/webhook   # 健康检查，返回 200 即正常
+docker compose logs -f        # 查看日志
+docker compose down           # 停止
+```
+
+### Docker (手动构建)
 
 ```bash
 docker build -t github-actions-gate .
