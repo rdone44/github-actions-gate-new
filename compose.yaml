@@ -1,0 +1,6 @@
+services:
+  gate:
+    build: .
+    network_mode: host
+    env_file: .env
+    restart: unless-stopped
